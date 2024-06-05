@@ -253,6 +253,7 @@ pub enum ValidationFilter {
 }
 
 impl ValidationFilter {
+    #[inline]
     pub fn is_valid(&self) -> bool {
         match self {
             ValidationFilter::Good => true,
@@ -261,6 +262,7 @@ impl ValidationFilter {
     }
 }
 
+#[inline]
 pub fn is_valid_filter(configs: &Identifier, regex_data: &Data) -> ValidationFilter {
     if regex_data.rarity < configs.min_rarity {
         return ValidationFilter::DataLowerRarity;
