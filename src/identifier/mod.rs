@@ -142,23 +142,17 @@ impl Identifier {
                 })
                 .collect::<Vec<Match>>()
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        match (self.file_support, is_file(text)) {
-            (true, true) => {
-                let strings = read_file_to_strings(text);
+        if self.file_support && is_file(text) {
+            let strings = read_file_to_strings(text);
 
-                strings
-                    .par_iter()
-                    .map(|text| check_fn(DATA.par_iter(), text))
-                    .flatten()
-                    .collect()
-            }
-
-            _ => check_fn(DATA.par_iter(), &text.to_string()),
+            strings
+                .par_iter()
+                .map(|text| check_fn(DATA.par_iter(), text))
+                .flatten()
+                .collect()
+        } else {
+            check_fn(DATA.par_iter(), &text.to_string())
         }
-
-        #[cfg(target_arch = "wasm32")]
-        check_fn(DATA.to_vec(), &text.to_string())
     }
 
     /// This returns the first identification.
@@ -199,6 +193,31 @@ impl Identifier {
         }
 
         None
+    }
+}
+// Identifier implementation for wasm
+#[cfg(target_arch = "wasm32")]
+impl Identifier {
+    // There is no file system on the web, so we are not reading strings from file.
+    // let the user perform the I/O and read the file, then pass the content of it.
+    pub fn identify(&self, text: &[String]) -> Vec<Match> {
+        let regexes = if self.boundaryless {
+            &BOUNDARYLESS_REGEX
+        } else {
+            &REGEX
+        };
+
+        text.iter()
+            .flat_map(|text| {
+                DATA.iter().enumerate().filter_map(|(i, e)| {
+                    if is_valid_filter(self, e).is_valid() && regexes[i].is_match(text) {
+                        Some(Match::new(text.to_owned(), e.clone()))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect()
     }
 }
 
@@ -245,30 +264,27 @@ fn is_file(name: &str) -> bool {
 /// Validation filter
 #[derive(Debug)]
 pub enum ValidationFilter {
-    DataLowerRarity,
-    DataHigherRarity,
-    DataInTags,
-    DataInExclude,
-    Good,
+    InvalidDataRarityTooLow,
+    InvalidDataRarityTooHigh,
+    InvalidDataNotInTags,
+    InvalidDataInExclude,
+    Valid,
 }
 
 impl ValidationFilter {
     #[inline]
     pub fn is_valid(&self) -> bool {
-        match self {
-            ValidationFilter::Good => true,
-            _ => false,
-        }
+        matches!(self, ValidationFilter::Valid)
     }
 }
 
 #[inline]
 pub fn is_valid_filter(configs: &Identifier, regex_data: &Data) -> ValidationFilter {
     if regex_data.rarity < configs.min_rarity {
-        return ValidationFilter::DataLowerRarity;
+        return ValidationFilter::InvalidDataRarityTooLow;
     }
     if regex_data.rarity > configs.max_rarity {
-        return ValidationFilter::DataHigherRarity;
+        return ValidationFilter::InvalidDataRarityTooHigh;
     }
 
     if configs
@@ -276,17 +292,17 @@ pub fn is_valid_filter(configs: &Identifier, regex_data: &Data) -> ValidationFil
         .iter()
         .any(|y| !regex_data.tags.iter().any(|x| x == y))
     {
-        return ValidationFilter::DataInTags;
+        return ValidationFilter::InvalidDataNotInTags;
     }
     if configs
         .exclude_tags
         .iter()
         .any(|y| regex_data.tags.iter().any(|x| x == y))
     {
-        return ValidationFilter::DataInExclude;
+        return ValidationFilter::InvalidDataInExclude;
     }
 
-    ValidationFilter::Good
+    ValidationFilter::Valid
 }
 
 #[cfg(not(target_arch = "wasm32"))]
