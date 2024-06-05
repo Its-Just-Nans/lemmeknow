@@ -2822,5 +2822,56 @@
          ],
          "Invalid": []
       }
+   },
+   {
+      "Name": "sha1",
+      "Regex": "^[0-9a-fA-F]{40}$",
+      "plural_name": false,
+      "Description": "sha1 hash",
+      "Rarity": 1,
+      "URL": null,
+      "Tags": [
+         "hash"
+      ],
+      "Examples": {
+         "Valid": [
+            "5511f894571b58ad5fe231297ed88be4c410c34c"
+         ],
+         "Invalid": []
+      }
+   },
+   {
+      "Name": "sha256",
+      "Regex": "^[0-9a-fA-F]{64}$",
+      "plural_name": false,
+      "Description": "sha256 hash",
+      "Rarity": 1,
+      "URL": null,
+      "Tags": [
+         "hash"
+      ],
+      "Examples": {
+         "Valid": [
+            "7c13517e2bd3f4d4dc4c44be73f56c4a7f15caf3776cd68c33f7d6054f2ee919"
+         ],
+         "Invalid": []
+      }
+   },
+   {
+      "Name": "md5",
+      "Regex": "^[0-9a-fA-F]{32}$",
+      "plural_name": false,
+      "Description": "md5 hash",
+      "Rarity": 1,
+      "URL": null,
+      "Tags": [
+         "hash"
+      ],
+      "Examples": {
+         "Valid": [
+            "c528dcb56c26016a869f89090e1c80eb"
+         ],
+         "Invalid": []
+      }
    }
 ]
